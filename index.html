@@ -71,11 +71,11 @@
                     <span class="mr-2">💾</span> Extracted Codes
                 </h2>
                 <div class="flex gap-2 flex-wrap">
-                    <button onclick="copyAllCodes()" class="bg-green-600 text-black px-4 py-2 rounded hover:bg-green-500 font-bold transition-colors">📋 Copy</button>
-                    <button onclick="emailCodes()" class="bg-green-600 text-black px-4 py-2 rounded hover:bg-green-500 font-bold transition-colors">📧 Email</button>
-                    <button onclick="whatsappCodes()" class="bg-green-600 text-black px-4 py-2 rounded hover:bg-green-500 font-bold transition-colors">💬 WhatsApp</button>
-                    <button onclick="downloadExcel()" class="bg-green-600 text-black px-4 py-2 rounded hover:bg-green-500 font-bold transition-colors">📊 Excel</button>
-                    <button onclick="clearAll()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-500 font-bold transition-colors">🗑️ Clear</button>
+                    <button onclick="copyAllCodes()" class="bg-green-600 text-black px-3 py-2 rounded hover:bg-green-500 font-bold transition-colors text-lg" title="Copy to Clipboard">📋</button>
+                    <button onclick="emailCodes()" class="bg-green-600 text-black px-3 py-2 rounded hover:bg-green-500 font-bold transition-colors text-lg" title="Send via Email">📧</button>
+                    <button onclick="whatsappCodes()" class="bg-green-600 text-black px-3 py-2 rounded hover:bg-green-500 font-bold transition-colors text-lg" title="Share on WhatsApp">💬</button>
+                    <button onclick="downloadExcel()" class="bg-green-600 text-black px-3 py-2 rounded hover:bg-green-500 font-bold transition-colors text-lg" title="Download Excel">📊</button>
+                    <button onclick="clearAll()" class="bg-red-600 text-white px-3 py-2 rounded hover:bg-red-500 font-bold transition-colors text-lg" title="Clear All Codes">🗑️</button>
                 </div>
             </div>
             
@@ -147,8 +147,8 @@
                                 <div class="text-green-600 text-sm">${new Date(item.timestamp).toLocaleString()}</div>
                             </div>
                         </div>
-                        <button onclick="removeCode(${index})" class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-500 font-bold transition-colors">
-                            ❌ Remove
+                        <button onclick="removeCode(${index})" class="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-500 font-bold transition-colors text-xs">
+                            ❌
                         </button>
                     </div>
                 `).join('');
