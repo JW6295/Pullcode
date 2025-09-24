@@ -7,73 +7,91 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
-<body class="bg-gradient-to-br from-blue-500 to-purple-600 min-h-screen p-4">
+<body class="bg-black min-h-screen p-4">
     <div class="max-w-4xl mx-auto">
-        <h1 class="text-4xl font-bold text-white text-center mb-6">🔮 Ring Pull Oracle</h1>
+        <div class="text-center mb-8">
+            <h1 class="text-5xl font-bold text-green-400 mb-2 drop-shadow-lg">🔮 Ring Pull Oracle</h1>
+            <p class="text-green-300 text-lg">AI-Powered Code Extraction System</p>
+            <div class="w-32 h-1 bg-gradient-to-r from-green-400 to-green-600 mx-auto mt-4 rounded"></div>
+        </div>
 
         <!-- API Key -->
-        <div class="bg-white/10 backdrop-blur rounded-lg p-6 mb-6">
-            <h2 class="text-white font-bold mb-4">API Key</h2>
+        <div class="bg-gray-900 border border-green-500 rounded-lg p-6 mb-6 shadow-lg shadow-green-500/20">
+            <h2 class="text-green-400 font-bold mb-4 flex items-center">
+                <span class="mr-2">🔑</span> API Configuration
+            </h2>
             <div class="flex gap-2">
                 <input type="password" id="apiKey" placeholder="Enter Gemini API key" 
-                       class="flex-1 p-3 rounded bg-white/20 text-white placeholder-white/60">
-                <button onclick="testAPI()" class="bg-green-500 text-white px-6 py-3 rounded hover:bg-green-600">
-                    Test
+                       class="flex-1 p-3 rounded bg-black border border-green-500 text-green-300 placeholder-green-600 focus:border-green-400 focus:outline-none">
+                <button onclick="testAPI()" class="bg-green-600 text-black px-6 py-3 rounded hover:bg-green-500 font-bold transition-colors">
+                    Test API
                 </button>
             </div>
-            <div id="apiStatus" class="text-white mt-2"></div>
+            <div id="apiStatus" class="text-green-300 mt-2"></div>
         </div>
 
         <!-- Camera -->
-        <div class="bg-white/10 backdrop-blur rounded-lg p-6 mb-6">
-            <h2 class="text-white font-bold mb-4">Camera</h2>
+        <div class="bg-gray-900 border border-green-500 rounded-lg p-6 mb-6 shadow-lg shadow-green-500/20">
+            <h2 class="text-green-400 font-bold mb-4 flex items-center">
+                <span class="mr-2">📷</span> Camera System
+            </h2>
             <div class="flex items-center justify-between mb-4">
-                <label class="flex items-center text-white">
-                    <input type="checkbox" id="cameraToggle" onchange="toggleCamera()" class="mr-3">
+                <label class="flex items-center text-green-300 cursor-pointer">
+                    <input type="checkbox" id="cameraToggle" onchange="toggleCamera()" class="mr-3 accent-green-500">
                     Enable Camera
                 </label>
-                <button onclick="switchCamera()" id="switchBtn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600" style="display: none;">
-                    📷 Switch Camera
+                <button onclick="switchCamera()" id="switchBtn" class="bg-green-600 text-black px-4 py-2 rounded hover:bg-green-500 font-bold transition-colors" style="display: none;">
+                    🔄 Switch Camera
                 </button>
             </div>
             
             <div id="cameraContainer" style="display: none;">
                 <video id="cameraVideo" autoplay playsinline 
-                       class="w-full max-w-md mx-auto rounded-lg cursor-pointer border-4 border-green-400 block"
+                       class="w-full max-w-md mx-auto rounded-lg cursor-pointer border-4 border-green-400 block shadow-lg shadow-green-400/30"
                        onclick="captureImage()"></video>
-                <p class="text-white text-center mt-2">Click video to capture • <span id="cameraType">Back Camera</span></p>
+                <p class="text-green-300 text-center mt-2">
+                    <span class="animate-pulse">⚡</span> Click video to capture • <span id="cameraType" class="text-green-400 font-bold">Back Camera</span>
+                </p>
             </div>
         </div>
 
         <!-- File Upload -->
-        <div class="bg-white/10 backdrop-blur rounded-lg p-6 mb-6">
-            <h2 class="text-white font-bold mb-4">Upload Files</h2>
+        <div class="bg-gray-900 border border-green-500 rounded-lg p-6 mb-6 shadow-lg shadow-green-500/20">
+            <h2 class="text-green-400 font-bold mb-4 flex items-center">
+                <span class="mr-2">📁</span> File Upload
+            </h2>
             <input type="file" id="fileInput" multiple accept="image/*" onchange="processFiles()"
-                   class="w-full p-3 rounded bg-white/20 text-white">
+                   class="w-full p-3 rounded bg-black border border-green-500 text-green-300 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-green-600 file:text-black file:font-bold hover:file:bg-green-500 transition-colors">
         </div>
 
         <!-- Results -->
-        <div class="bg-white/10 backdrop-blur rounded-lg p-6 mb-6">
+        <div class="bg-gray-900 border border-green-500 rounded-lg p-6 mb-6 shadow-lg shadow-green-500/20">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-white font-bold">Results</h2>
-                <div class="flex gap-2">
-                    <button onclick="copyAllCodes()" class="bg-blue-500 text-white px-4 py-2 rounded">Copy</button>
-                    <button onclick="emailCodes()" class="bg-red-500 text-white px-4 py-2 rounded">Email</button>
-                    <button onclick="whatsappCodes()" class="bg-green-500 text-white px-4 py-2 rounded">WhatsApp</button>
-                    <button onclick="downloadExcel()" class="bg-purple-500 text-white px-4 py-2 rounded">Excel</button>
-                    <button onclick="clearAll()" class="bg-gray-500 text-white px-4 py-2 rounded">Clear</button>
+                <h2 class="text-green-400 font-bold flex items-center">
+                    <span class="mr-2">💾</span> Extracted Codes
+                </h2>
+                <div class="flex gap-2 flex-wrap">
+                    <button onclick="copyAllCodes()" class="bg-green-600 text-black px-4 py-2 rounded hover:bg-green-500 font-bold transition-colors">📋 Copy</button>
+                    <button onclick="emailCodes()" class="bg-green-600 text-black px-4 py-2 rounded hover:bg-green-500 font-bold transition-colors">📧 Email</button>
+                    <button onclick="whatsappCodes()" class="bg-green-600 text-black px-4 py-2 rounded hover:bg-green-500 font-bold transition-colors">💬 WhatsApp</button>
+                    <button onclick="downloadExcel()" class="bg-green-600 text-black px-4 py-2 rounded hover:bg-green-500 font-bold transition-colors">📊 Excel</button>
+                    <button onclick="clearAll()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-500 font-bold transition-colors">🗑️ Clear</button>
                 </div>
             </div>
             
             <div id="codesList"></div>
-            <div id="noCodes" class="text-white/60 text-center py-8">
-                No codes yet. Enter API key and capture/upload images!
+            <div id="noCodes" class="text-green-600 text-center py-8 border-2 border-dashed border-green-600 rounded-lg">
+                <div class="text-4xl mb-2">⚡</div>
+                <div class="text-lg">No codes extracted yet</div>
+                <div class="text-sm opacity-75">Enter API key and capture/upload images to begin</div>
             </div>
         </div>
 
         <!-- Status -->
-        <div class="bg-white/10 backdrop-blur rounded-lg p-4 text-center">
-            <div class="text-white" id="status">Ready</div>
+        <div class="bg-gray-900 border border-green-500 rounded-lg p-4 text-center shadow-lg shadow-green-500/20">
+            <div class="text-green-300 font-mono" id="status">
+                <span class="animate-pulse">⚡</span> System Ready
+            </div>
         </div>
     </div>
 
@@ -107,30 +125,30 @@
             } else {
                 noCodes.style.display = 'none';
                 list.innerHTML = codes.map((item, index) => `
-                    <div class="bg-white/20 p-4 rounded mb-2 flex items-center justify-between gap-4">
+                    <div class="bg-black border border-green-500 p-4 rounded mb-3 flex items-center justify-between gap-4 hover:border-green-400 transition-colors shadow-md shadow-green-500/10">
                         <div class="flex items-center gap-4">
                             ${item.imageData ? `
                                 <img src="${item.imageData}" 
-                                     class="w-16 h-16 object-cover rounded border-2 border-white/30 cursor-pointer"
+                                     class="w-16 h-16 object-cover rounded border-2 border-green-500 cursor-pointer hover:border-green-400 transition-colors shadow-lg"
                                      onclick="showFullImage('${item.imageData.replace(/'/g, "\\'")}')"
                                      title="Click to view full size">
                             ` : `
-                                <div class="w-16 h-16 bg-gray-500/50 rounded border-2 border-white/30 flex items-center justify-center">
-                                    <span class="text-white/60 text-xs">No Preview</span>
+                                <div class="w-16 h-16 bg-gray-800 border-2 border-green-600 rounded flex items-center justify-center">
+                                    <span class="text-green-600 text-xs">No Preview</span>
                                 </div>
                             `}
                             <div>
                                 <div class="flex items-center gap-2">
-                                    <div class="text-white font-mono text-xl font-bold" id="code-${index}">${item.code}</div>
-                                    <button onclick="editCode(${index})" class="text-blue-400 hover:text-blue-300 text-sm">
-                                        ✏️ Edit
+                                    <div class="text-green-400 font-mono text-xl font-bold tracking-wider" id="code-${index}">${item.code}</div>
+                                    <button onclick="editCode(${index})" class="text-green-500 hover:text-green-300 text-sm transition-colors">
+                                        ✏️
                                     </button>
                                 </div>
-                                <div class="text-white/70 text-sm">${new Date(item.timestamp).toLocaleString()}</div>
+                                <div class="text-green-600 text-sm">${new Date(item.timestamp).toLocaleString()}</div>
                             </div>
                         </div>
-                        <button onclick="removeCode(${index})" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">
-                            Remove
+                        <button onclick="removeCode(${index})" class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-500 font-bold transition-colors">
+                            ❌ Remove
                         </button>
                     </div>
                 `).join('');
@@ -472,7 +490,7 @@
             const input = document.createElement('input');
             input.type = 'text';
             input.value = currentCode;
-            input.className = 'bg-white/20 text-white font-mono text-xl font-bold px-2 py-1 rounded border-2 border-blue-400 w-48';
+            input.className = 'bg-black border-2 border-green-400 text-green-400 font-mono text-xl font-bold px-2 py-1 rounded w-48 focus:border-green-300 focus:outline-none';
             input.maxLength = 12;
             input.style.textTransform = 'uppercase';
             
@@ -482,11 +500,11 @@
             
             const saveBtn = document.createElement('button');
             saveBtn.textContent = '✅ Save';
-            saveBtn.className = 'bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600';
+            saveBtn.className = 'bg-green-600 text-black px-3 py-1 rounded text-sm hover:bg-green-500 font-bold transition-colors';
             
             const cancelBtn = document.createElement('button');
             cancelBtn.textContent = '❌ Cancel';
-            cancelBtn.className = 'bg-gray-500 text-white px-3 py-1 rounded text-sm hover:bg-gray-600';
+            cancelBtn.className = 'bg-gray-600 text-white px-3 py-1 rounded text-sm hover:bg-gray-500 font-bold transition-colors';
             
             buttonContainer.appendChild(saveBtn);
             buttonContainer.appendChild(cancelBtn);
