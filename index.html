@@ -27,16 +27,21 @@
         <!-- Camera -->
         <div class="bg-white/10 backdrop-blur rounded-lg p-6 mb-6">
             <h2 class="text-white font-bold mb-4">Camera</h2>
-            <label class="flex items-center text-white mb-4">
-                <input type="checkbox" id="cameraToggle" onchange="toggleCamera()" class="mr-3">
-                Enable Camera
-            </label>
+            <div class="flex items-center justify-between mb-4">
+                <label class="flex items-center text-white">
+                    <input type="checkbox" id="cameraToggle" onchange="toggleCamera()" class="mr-3">
+                    Enable Camera
+                </label>
+                <button onclick="switchCamera()" id="switchBtn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600" style="display: none;">
+                    📷 Switch Camera
+                </button>
+            </div>
             
             <div id="cameraContainer" style="display: none;">
                 <video id="cameraVideo" autoplay playsinline 
                        class="w-full max-w-md mx-auto rounded-lg cursor-pointer border-4 border-green-400 block"
                        onclick="captureImage()"></video>
-                <p class="text-white text-center mt-2">Click video to capture</p>
+                <p class="text-white text-center mt-2">Click video to capture • <span id="cameraType">Back Camera</span></p>
             </div>
         </div>
 
@@ -75,12 +80,15 @@
     <script>
         let stream = null;
         let codes = [];
+        let currentFacingMode = 'environment'; // Start with rear camera
 
         // Load saved codes
         try {
             const saved = localStorage.getItem('codes');
             if (saved) codes = JSON.parse(saved);
-        } catch (e) {}
+        } catch (e) {
+            console.log('Could not load saved codes');
+        }
         
         updateDisplay();
 
@@ -99,12 +107,24 @@
             } else {
                 noCodes.style.display = 'none';
                 list.innerHTML = codes.map((item, index) => `
-                    <div class="bg-white/20 p-4 rounded mb-2 flex justify-between items-center">
-                        <div>
-                            <div class="text-white font-mono text-xl font-bold">${item.code}</div>
-                            <div class="text-white/70 text-sm">${new Date(item.timestamp).toLocaleString()}</div>
+                    <div class="bg-white/20 p-4 rounded mb-2 flex items-center justify-between gap-4">
+                        <div class="flex items-center gap-4">
+                            ${item.imageData ? `
+                                <img src="${item.imageData}" 
+                                     class="w-16 h-16 object-cover rounded border-2 border-white/30 cursor-pointer"
+                                     onclick="showFullImage('${item.imageData.replace(/'/g, "\\'")}')"
+                                     title="Click to view full size">
+                            ` : `
+                                <div class="w-16 h-16 bg-gray-500/50 rounded border-2 border-white/30 flex items-center justify-center">
+                                    <span class="text-white/60 text-xs">No Preview</span>
+                                </div>
+                            `}
+                            <div>
+                                <div class="text-white font-mono text-xl font-bold">${item.code}</div>
+                                <div class="text-white/70 text-sm">${new Date(item.timestamp).toLocaleString()}</div>
+                            </div>
                         </div>
-                        <button onclick="removeCode(${index})" class="bg-red-500 text-white px-3 py-1 rounded">
+                        <button onclick="removeCode(${index})" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">
                             Remove
                         </button>
                     </div>
@@ -114,7 +134,9 @@
             // Save to localStorage
             try {
                 localStorage.setItem('codes', JSON.stringify(codes));
-            } catch (e) {}
+            } catch (e) {
+                console.log('Could not save codes to localStorage');
+            }
         }
 
         async function testAPI() {
@@ -150,14 +172,13 @@
         async function toggleCamera() {
             const toggle = document.getElementById('cameraToggle');
             const container = document.getElementById('cameraContainer');
-            const video = document.getElementById('cameraVideo');
+            const switchBtn = document.getElementById('switchBtn');
 
             if (toggle.checked) {
                 try {
-                    stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                    video.srcObject = stream;
+                    await startCamera();
                     container.style.display = 'block';
-                    showStatus('Camera started');
+                    switchBtn.style.display = 'block';
                 } catch (err) {
                     alert('Camera failed: ' + err.message);
                     toggle.checked = false;
@@ -168,8 +189,61 @@
                     stream = null;
                 }
                 container.style.display = 'none';
+                switchBtn.style.display = 'none';
                 showStatus('Camera stopped');
             }
+        }
+
+        async function startCamera() {
+            const video = document.getElementById('cameraVideo');
+            const cameraType = document.getElementById('cameraType');
+            
+            const constraints = {
+                video: {
+                    facingMode: { ideal: currentFacingMode },
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 }
+                }
+            };
+            
+            try {
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+                
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
+                
+                const cameraName = currentFacingMode === 'environment' ? 'Back Camera' : 'Front Camera';
+                cameraType.textContent = cameraName;
+                showStatus(`📷 ${cameraName} started`);
+                
+            } catch (err) {
+                // Fallback to opposite camera
+                currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+                const fallbackConstraints = {
+                    video: {
+                        facingMode: currentFacingMode,
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    }
+                };
+                
+                stream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
+                video.srcObject = stream;
+                
+                const cameraName = currentFacingMode === 'environment' ? 'Back Camera' : 'Front Camera';
+                cameraType.textContent = cameraName + ' (fallback)';
+                showStatus(`📱 ${cameraName} started (fallback)`);
+            }
+        }
+
+        async function switchCamera() {
+            if (!stream) return;
+            
+            // Switch facing mode
+            currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+            await startCamera();
         }
 
         async function captureImage() {
@@ -195,7 +269,8 @@
                 
                 codes.push({
                     code: code,
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
+                    imageData: imageData
                 });
 
                 updateDisplay();
@@ -224,7 +299,8 @@
                     
                     codes.push({
                         code: code,
-                        timestamp: new Date().toISOString()
+                        timestamp: new Date().toISOString(),
+                        imageData: imageData
                     });
 
                     updateDisplay();
@@ -254,7 +330,7 @@
                 body: JSON.stringify({
                     contents: [{
                         parts: [{
-                            text: 'Extract any code from this image. Return only the code.'
+                            text: 'Extract any 12-character code from this ring pull image. The code should start with D and contain only letters and numbers. Look carefully for codes that may be printed on the ring pull tab. Return only the code, nothing else.'
                         }, {
                             inline_data: {
                                 mime_type: 'image/png',
@@ -268,11 +344,62 @@
             if (!response.ok) throw new Error(`API Error ${response.status}`);
 
             const data = await response.json();
-            const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+            let extractedText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
             
-            if (!text) throw new Error('No code found');
+            if (!extractedText) throw new Error('No code found');
 
-            return text.replace(/[^A-Z0-9]/g, '').substring(0, 12);
+            // Clean the extracted text - remove all non-alphanumeric characters
+            let cleanCode = extractedText.replace(/[^A-Z0-9]/g, '');
+            
+            // Apply OCR character corrections for common misreads
+            const ocrCorrections = {
+                'S': '5',  // S often looks like 5 (S not allowed in ring pull codes)
+                'O': '0',  // O often looks like 0 
+                'I': '1',  // I often looks like 1
+                'Z': '2',  // Z often looks like 2
+                'G': '6',  // G often looks like 6
+                'B': '8',  // B often looks like 8
+                'A': '4',  // A often looks like 4 (A not allowed in ring pull codes)
+                'U': 'V',  // U becomes V (U not allowed in ring pull codes)
+                'Q': '0'   // Q often looks like 0
+            };
+            
+            // Apply corrections
+            for (const [wrong, correct] of Object.entries(ocrCorrections)) {
+                cleanCode = cleanCode.replace(new RegExp(wrong, 'g'), correct);
+            }
+            
+            // Try to find a valid 12-character code starting with D
+            let finalCode = '';
+            
+            // Look for D followed by 11 characters
+            const dCodeMatch = cleanCode.match(/D[A-Z0-9]{11}/);
+            if (dCodeMatch) {
+                finalCode = dCodeMatch[0];
+            } else {
+                // If no D code found, take first 12 characters and ensure it starts with D
+                if (cleanCode.length >= 12) {
+                    finalCode = 'D' + cleanCode.substring(cleanCode.startsWith('D') ? 1 : 0, 11);
+                } else if (cleanCode.length > 0) {
+                    // Pad with zeros if too short
+                    finalCode = 'D' + cleanCode.replace('D', '').padEnd(11, '0').substring(0, 11);
+                } else {
+                    throw new Error('No valid code pattern found');
+                }
+            }
+            
+            // Final validation - ensure exactly 12 characters, starts with D
+            if (finalCode.length !== 12 || !finalCode.startsWith('D')) {
+                throw new Error(`Invalid code format: ${finalCode}`);
+            }
+            
+            // Remove any remaining invalid characters (only U, A, S not allowed in ring pull codes)
+            finalCode = finalCode.replace(/[UAS]/g, '');
+            if (finalCode.length < 12) {
+                finalCode = finalCode.padEnd(12, '0');
+            }
+            
+            return finalCode.substring(0, 12);
         }
 
         function removeCode(index) {
@@ -314,6 +441,22 @@
                 updateDisplay();
                 showStatus('Cleared');
             }
+        }
+
+        function showFullImage(imageData) {
+            // Create modal overlay
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black/80 flex items-center justify-center z-50';
+            modal.onclick = () => modal.remove();
+            
+            // Create full-size image
+            const img = document.createElement('img');
+            img.src = imageData;
+            img.className = 'max-w-full max-h-full rounded-lg';
+            img.onclick = (e) => e.stopPropagation();
+            
+            modal.appendChild(img);
+            document.body.appendChild(modal);
         }
     </script>
 </body>
