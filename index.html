@@ -6,6 +6,21 @@
     <title>Ring Pull Oracle</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        @keyframes pulse-ready {
+            0%, 100% { 
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% { 
+                opacity: 0.85;
+                transform: scale(1.02);
+            }
+        }
+        .capture-ready {
+            animation: pulse-ready 2s infinite;
+        }
+    </style>
 </head>
 <body class="bg-black min-h-screen p-4">
     <div class="max-w-4xl mx-auto">
@@ -65,14 +80,12 @@
                     <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
                         <div class="relative w-4/5 h-2/5 border-4 border-green-400 rounded-lg bg-green-400/10">
                             <div class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black/70 text-green-300 px-3 py-1 rounded text-sm whitespace-nowrap">
-                                📍 Position code here
+                                🎯 Position code here
                             </div>
-                            <!-- Corner markers -->
                             <div class="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-green-400"></div>
                             <div class="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-green-400"></div>
                             <div class="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-green-400"></div>
                             <div class="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-green-400"></div>
-                            <!-- Center crosshair -->
                             <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
                                 <div class="w-8 h-0.5 bg-green-400"></div>
                                 <div class="w-0.5 h-8 bg-green-400 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
@@ -80,6 +93,13 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- Capture Status Indicator -->
+                <div id="captureStatus" class="mt-4 p-3 rounded-lg text-center font-semibold text-sm transition-all hidden">
+                    <span id="captureStatusIcon"></span>
+                    <span id="captureStatusText"></span>
+                </div>
+                
                 <p class="text-green-300 text-center mt-2">
                     <span class="animate-pulse">⚡</span> Click video to capture • <span id="cameraType" class="text-green-400 font-bold">Back Camera</span>
                 </p>
@@ -146,6 +166,33 @@
             console.log(msg);
         }
 
+        function showCaptureStatus(type, message) {
+            const statusDiv = document.getElementById('captureStatus');
+            const iconSpan = document.getElementById('captureStatusIcon');
+            const textSpan = document.getElementById('captureStatusText');
+            
+            statusDiv.classList.remove('hidden', 'bg-green-500', 'bg-yellow-500', 'capture-ready');
+            
+            if (type === 'ready') {
+                statusDiv.classList.add('bg-green-500', 'capture-ready');
+                iconSpan.textContent = '✅ ';
+                textSpan.textContent = message;
+            } else if (type === 'processing') {
+                statusDiv.classList.add('bg-yellow-500');
+                iconSpan.textContent = '⏳ ';
+                textSpan.textContent = message;
+            }
+            
+            statusDiv.classList.remove('hidden');
+        }
+
+        function hideCaptureStatus() {
+            const statusDiv = document.getElementById('captureStatus');
+            setTimeout(() => {
+                statusDiv.classList.add('hidden');
+            }, 2000);
+        }
+
         function updateDisplay() {
             const list = document.getElementById('codesList');
             const noCodes = document.getElementById('noCodes');
@@ -155,7 +202,10 @@
                 noCodes.style.display = 'block';
             } else {
                 noCodes.style.display = 'none';
-                list.innerHTML = codes.map((item, index) => `
+                const reversedCodes = [...codes].reverse();
+                list.innerHTML = reversedCodes.map((item, displayIndex) => {
+                    const actualIndex = codes.length - 1 - displayIndex;
+                    return `
                     <div class="bg-black border border-green-500 p-4 rounded mb-3 flex items-center justify-between gap-4 hover:border-green-400 transition-colors shadow-md shadow-green-500/10">
                         <div class="flex items-center gap-4">
                             ${item.imageData ? `
@@ -170,19 +220,15 @@
                             `}
                             <div>
                                 <div class="flex items-center gap-2">
-                                    <div class="text-green-400 font-mono text-xl font-bold tracking-wider" id="code-${index}">${item.code}</div>
-                                    <button onclick="editCode(${index})" class="text-green-500 hover:text-green-300 text-sm transition-colors">
-                                        ✏️
-                                    </button>
+                                    <div class="text-green-400 font-mono text-xl font-bold tracking-wider" id="code-${actualIndex}">${item.code}</div>
+                                    <button onclick="editCode(${actualIndex})" class="text-green-500 hover:text-green-300 text-sm transition-colors">✏️</button>
                                 </div>
                                 <div class="text-green-600 text-sm">${new Date(item.timestamp).toLocaleString()}</div>
                             </div>
                         </div>
-                        <button onclick="removeCode(${index})" class="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-500 font-bold transition-colors text-xs">
-                            ❌
-                        </button>
+                        <button onclick="removeCode(${actualIndex})" class="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-500 font-bold transition-colors text-xs">❌</button>
                     </div>
-                `).join('');
+                `}).join('');
             }
             
             try {
@@ -234,6 +280,7 @@
                     await startCamera();
                     container.style.display = 'block';
                     switchBtn.style.display = 'block';
+                    showCaptureStatus('ready', 'Ready to capture next photo');
                 } catch (err) {
                     alert('Camera failed: ' + err.message);
                     toggle.checked = false;
@@ -309,6 +356,7 @@
             if (!video.srcObject) return;
 
             showStatus('Capturing...');
+            showCaptureStatus('processing', 'Processing image...');
 
             try {
                 const canvas = document.createElement('canvas');
@@ -327,9 +375,13 @@
 
                 updateDisplay();
                 showStatus(`Extracted: ${code}`);
+                showCaptureStatus('ready', 'Ready to capture next photo');
+                hideCaptureStatus();
 
             } catch (err) {
                 showStatus(`Error: ${err.message}`);
+                showCaptureStatus('ready', 'Ready to capture next photo');
+                hideCaptureStatus();
             }
         }
 
@@ -408,15 +460,8 @@
             let cleanCode = extractedText.replace(/[^A-Z0-9]/g, '');
             
             const ocrCorrections = {
-                'S': '5',
-                'O': '0',
-                '1': 'L',
-                'Z': '2',
-                'G': '6',
-                'B': '8',
-                'A': '4',
-                'U': 'V',
-                'Q': '0'
+                'S': '5', 'O': '0', '1': 'L', 'Z': '2',
+                'G': '6', 'B': '8', 'A': '4', 'U': 'V', 'Q': '0'
             };
             
             for (const [wrong, correct] of Object.entries(ocrCorrections)) {
@@ -616,3 +661,4 @@
     </script>
 </body>
 </html>
+                
