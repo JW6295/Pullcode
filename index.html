@@ -151,6 +151,7 @@
         let stream = null;
         let codes = [];
         let currentFacingMode = 'environment';
+        let refreshModal = null; // For the custom modal
 
         try {
             const saved = localStorage.getItem('codes');
@@ -161,15 +162,70 @@
         
         updateDisplay();
 
-        // Improved beforeunload handler for better compatibility (direct assignment)
+        // Custom refresh confirmation modal
+        function showRefreshModal() {
+            if (codes.length === 0 || refreshModal) return; // Skip if empty or already showing
+
+            refreshModal = document.createElement('div');
+            refreshModal.className = 'fixed inset-0 bg-black/80 flex items-center justify-center z-50';
+            refreshModal.innerHTML = `
+                <div class="bg-gray-900 border-2 border-red-500 rounded-lg p-6 max-w-md w-full mx-4 text-center">
+                    <h3 class="text-2xl font-bold text-red-400 mb-4">⚠️ Leaving the Page?</h3>
+                    <p class="text-green-300 mb-6">You have ${codes.length} extracted codes. They auto-save, but export (📋/📧/📊) before leaving to be safe!</p>
+                    <div class="flex gap-4 justify-center">
+                        <button id="confirmRefresh" class="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-500 font-bold transition-colors">Leave Anyway</button>
+                        <button id="cancelRefresh" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-500 font-bold transition-colors">Stay Here</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(refreshModal);
+
+            // Event listeners for modal buttons
+            document.getElementById('confirmRefresh').onclick = () => {
+                refreshModal.remove();
+                refreshModal = null;
+                // Proceed with refresh (e.g., for F5, it will continue)
+                location.reload();
+            };
+            document.getElementById('cancelRefresh').onclick = () => {
+                refreshModal.remove();
+                refreshModal = null;
+            };
+
+            // Auto-focus cancel for safety
+            document.getElementById('cancelRefresh').focus();
+        }
+
+        // Block common refresh keys and show modal
+        document.addEventListener('keydown', function(event) {
+            if ((event.key === 'F5' || (event.ctrlKey && event.key === 'r') || (event.metaKey && event.key === 'r')) && codes.length > 0) {
+                event.preventDefault();
+                showRefreshModal();
+                return false;
+            }
+        });
+
+        // Catch browser back/forward navigation
+        window.addEventListener('popstate', function(event) {
+            if (codes.length > 0) {
+                event.preventDefault();
+                showRefreshModal();
+                // Push state back to stay
+                history.pushState(null, null, location.href);
+            }
+        });
+
+        // Fallback for tab visibility change (e.g., accidental close)
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden && codes.length > 0) {
+                // Optional: Could log or prompt on return, but keeping light
+            }
+        });
+
+        // Legacy beforeunload as backup (for non-key refreshes)
         window.onbeforeunload = function(e) {
             if (codes.length > 0) {
-                const confirmationMessage = 'Leave page? You have unsaved codes—export them first to avoid losing access!';
-                e = e || window.event;
-                if (e) {
-                    e.returnValue = confirmationMessage;
-                }
-                return confirmationMessage;
+                return 'You have unsaved codes—export them first!';
             }
         };
 
@@ -432,7 +488,7 @@
 
         function readFile(file) {
             return new Promise((resolve, reject) => {
-                const reader = new FileReader();
+                const reader = FileReader();
                 reader.onload = () => resolve(reader.result);
                 reader.onerror = reject;
                 reader.readAsDataURL(file);
