@@ -161,6 +161,16 @@
         
         updateDisplay();
 
+        // Add beforeunload event listener to warn about data loss on refresh/reload
+        window.addEventListener('beforeunload', function(e) {
+            if (codes.length > 0) {
+                const confirmationMessage = 'Are you sure you want to refresh or reload? All extracted codes will be lost.';
+                e.preventDefault();
+                e.returnValue = confirmationMessage;
+                return confirmationMessage;
+            }
+        });
+
         function showStatus(msg) {
             document.getElementById('status').textContent = msg;
             console.log(msg);
@@ -661,4 +671,3 @@
     </script>
 </body>
 </html>
-                
