@@ -150,13 +150,16 @@
     <script>
         let stream = null;
         let codes = [];
-        let currentFacingMode = 'environment';
 
+        // Load codes from localStorage on page load
         try {
-            const saved = localStorage.getItem('codes');
-            if (saved) codes = JSON.parse(saved);
+            const saved = localStorage.getItem('ringPullCodes');
+            if (saved) {
+                codes = JSON.parse(saved);
+                console.log(`Loaded ${codes.length} codes from localStorage`);
+            }
         } catch (e) {
-            console.log('Could not load saved codes');
+            console.error('Could not load saved codes:', e);
         }
         
         updateDisplay();
@@ -191,6 +194,16 @@
             setTimeout(() => {
                 statusDiv.classList.add('hidden');
             }, 2000);
+        }
+
+        function saveCodesToStorage() {
+            try {
+                localStorage.setItem('ringPullCodes', JSON.stringify(codes));
+                console.log(`Saved ${codes.length} codes to localStorage`);
+            } catch (e) {
+                console.error('Could not save codes to localStorage:', e);
+                alert('Warning: Could not save codes due to storage limits. Consider downloading as Excel.');
+            }
         }
 
         function updateDisplay() {
@@ -231,11 +244,8 @@
                 `}).join('');
             }
             
-            try {
-                localStorage.setItem('codes', JSON.stringify(codes));
-            } catch (e) {
-                console.log('Could not save codes to localStorage');
-            }
+            // Save to localStorage after any update
+            saveCodesToStorage();
         }
 
         async function testAPI() {
@@ -269,6 +279,8 @@
                 status.textContent = `❌ ${err.message}`;
             }
         }
+
+        let currentFacingMode = 'environment';
 
         async function toggleCamera() {
             const toggle = document.getElementById('cameraToggle');
@@ -529,8 +541,9 @@
         }
 
         function clearAll() {
-            if (confirm('Clear all?')) {
+            if (confirm('Clear all? This will also remove from localStorage.')) {
                 codes = [];
+                localStorage.removeItem('ringPullCodes');
                 updateDisplay();
                 showStatus('Cleared');
             }
@@ -661,4 +674,3 @@
     </script>
 </body>
 </html>
-                
