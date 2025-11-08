@@ -478,7 +478,7 @@
                 body: JSON.stringify({
                     contents: [{
                         parts: [{
-                            text: 'Extract the 12-character alphanumeric code from this ring pull tab image. The code starts with D followed by 11 more characters. Return ONLY the code.'
+                            text: 'Extract the 12-character alphanumeric code from this ring pull tab image. The code starts with D followed by 11 more characters. IMPORTANT: These codes NEVER contain the letter S - any S-looking character is actually the number 5. Common OCR errors to avoid: S is always 5, O is 0 (zero), I is 1. Return ONLY the 12-character code.'
                         }, {
                             inline_data: {
                                 mime_type: 'image/png',
