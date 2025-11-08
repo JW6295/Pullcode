@@ -146,6 +146,8 @@
                 </h2>
                 <div class="flex gap-2 flex-wrap">
                     <button onclick="copyAllCodes()" class="bg-green-600 text-black px-3 py-2 rounded hover:bg-green-500 font-bold transition-colors text-lg" title="Copy to Clipboard">📋</button>
+                    <button onclick="emailCodes()" class="bg-green-600 text-black px-3 py-2 rounded hover:bg-green-500 font-bold transition-colors text-lg" title="Send via Email">📧</button>
+                    <button onclick="whatsappCodes()" class="bg-green-600 text-black px-3 py-2 rounded hover:bg-green-500 font-bold transition-colors text-lg" title="Share on WhatsApp">💬</button>
                     <button onclick="downloadExcel()" class="bg-green-600 text-black px-3 py-2 rounded hover:bg-green-500 font-bold transition-colors text-lg" title="Download Excel">📊</button>
                     <button onclick="clearAll()" class="bg-red-600 text-white px-3 py-2 rounded hover:bg-red-500 font-bold transition-colors text-lg" title="Clear All Codes">🗑️</button>
                 </div>
@@ -521,6 +523,18 @@
             const text = codes.map(c => c.code).join('\n');
             navigator.clipboard.writeText(text);
             showStatus('Copied to clipboard');
+        }
+
+        function emailCodes() {
+            if (codes.length === 0) return;
+            const body = codes.map(c => c.code).join('\n');
+            window.location.href = `mailto:?subject=Ring Pull Codes&body=${encodeURIComponent(body)}`;
+        }
+
+        function whatsappCodes() {
+            if (codes.length === 0) return;
+            const text = codes.map(c => c.code).join('\n');
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`);
         }
 
         function downloadExcel() {
