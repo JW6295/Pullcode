@@ -43,7 +43,7 @@
             <div id="recoveryMessage" class="text-green-300 mb-6"></div>
             <div class="flex gap-4 justify-center">
                 <button onclick="acceptRecovery()" class="bg-green-600 text-black px-6 py-2 rounded hover:bg-green-500 font-bold transition-colors">
-                    ✅ Continue with Saved Data
+                    ✅ Continue
                 </button>
                 <button onclick="rejectRecovery()" class="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-500 font-bold transition-colors">
                     🗑️ Start Fresh
@@ -62,7 +62,7 @@
             <h1 class="text-5xl font-bold text-green-400 mb-2 drop-shadow-lg">🔮 Ring Pull Oracle</h1>
             <p class="text-green-300 text-lg">AI-Powered Code Extraction System</p>
             <div class="w-32 h-1 bg-gradient-to-r from-green-400 to-green-600 mx-auto mt-4 rounded"></div>
-            <p id="autoSaveStatus" class="text-green-600 text-xs mt-2">✅ Auto-Save Enabled - Your data is protected</p>
+            <p class="text-green-600 text-xs mt-2">✅ Auto-Save Enabled</p>
         </div>
 
         <!-- API Key -->
@@ -81,11 +81,8 @@
                 <label class="text-green-300 text-sm mb-1 block">Vision Model:</label>
                 <select id="modelSelect" class="w-full p-3 rounded bg-black border border-green-500 text-green-300 focus:border-green-400 focus:outline-none">
                     <option value="gemini-2.0-flash">Gemini 2.0 Flash (Fast - Default)</option>
-                    <option value="gemini-2.5-flash">Gemini 2.5 Flash (Balanced)</option>
                     <option value="gemini-1.5-pro">Gemini 1.5 Pro (Most Accurate)</option>
-                    <option value="gemini-2.0-flash-thinking-exp-01-21">Gemini 2.0 Flash Thinking (Experimental)</option>
                 </select>
-                <p class="text-green-600 text-xs mt-1">💡 Try different models if accuracy is poor. Pro is slower but more accurate.</p>
             </div>
             <div id="apiStatus" class="text-green-300 mt-2"></div>
         </div>
@@ -111,25 +108,15 @@
                            class="w-full rounded-lg cursor-pointer border-4 border-green-400 block shadow-lg shadow-green-400/30"
                            onclick="captureImage()"></video>
                     
-                    <!-- Camera Guide Overlay -->
                     <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
                         <div class="relative w-4/5 h-2/5 border-4 border-green-400 rounded-lg bg-green-400/10">
                             <div class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black/70 text-green-300 px-3 py-1 rounded text-sm whitespace-nowrap">
                                 🎯 Position code here
                             </div>
-                            <div class="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-green-400"></div>
-                            <div class="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-green-400"></div>
-                            <div class="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-green-400"></div>
-                            <div class="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-green-400"></div>
-                            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                                <div class="w-8 h-0.5 bg-green-400"></div>
-                                <div class="w-0.5 h-8 bg-green-400 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
-                            </div>
                         </div>
                     </div>
                 </div>
                 
-                <!-- Capture Status Indicator -->
                 <div id="captureStatus" class="mt-4 p-3 rounded-lg text-center font-semibold text-sm transition-all hidden">
                     <span id="captureStatusIcon"></span>
                     <span id="captureStatusText"></span>
@@ -138,7 +125,6 @@
                 <p class="text-green-300 text-center mt-2">
                     <span class="animate-pulse">⚡</span> Click video to capture • <span id="cameraType" class="text-green-400 font-bold">Back Camera</span>
                 </p>
-                <p class="text-green-600 text-xs text-center mt-1">💡 Align code within the guide box for best results</p>
             </div>
         </div>
 
@@ -159,8 +145,6 @@
                 </h2>
                 <div class="flex gap-2 flex-wrap">
                     <button onclick="copyAllCodes()" class="bg-green-600 text-black px-3 py-2 rounded hover:bg-green-500 font-bold transition-colors text-lg" title="Copy to Clipboard">📋</button>
-                    <button onclick="emailCodes()" class="bg-green-600 text-black px-3 py-2 rounded hover:bg-green-500 font-bold transition-colors text-lg" title="Send via Email">📧</button>
-                    <button onclick="whatsappCodes()" class="bg-green-600 text-black px-3 py-2 rounded hover:bg-green-500 font-bold transition-colors text-lg" title="Share on WhatsApp">💬</button>
                     <button onclick="downloadExcel()" class="bg-green-600 text-black px-3 py-2 rounded hover:bg-green-500 font-bold transition-colors text-lg" title="Download Excel">📊</button>
                     <button onclick="clearAll()" class="bg-red-600 text-white px-3 py-2 rounded hover:bg-red-500 font-bold transition-colors text-lg" title="Clear All Codes">🗑️</button>
                 </div>
@@ -190,7 +174,6 @@
 
         // Initialize and check for saved data
         function initializeApp() {
-            // Load saved codes
             try {
                 const saved = localStorage.getItem('ringPullCodes');
                 const savedApiKey = localStorage.getItem('ringPullApiKey');
@@ -204,7 +187,6 @@
                     }
                 }
                 
-                // Restore API key and model if saved
                 if (savedApiKey) {
                     document.getElementById('apiKey').value = savedApiKey;
                 }
@@ -212,8 +194,10 @@
                     document.getElementById('modelSelect').value = savedModel;
                 }
                 
+                updateDisplay();
             } catch (e) {
                 console.log('Could not load saved data:', e);
+                updateDisplay();
             }
         }
 
@@ -227,47 +211,39 @@
             
             message.innerHTML = `
                 <p>Found <strong>${codeCount} saved codes</strong> from your previous session!</p>
-                <p class="text-sm text-green-600 mt-2">Last code saved: ${lastTime}</p>
-                <p class="text-sm text-green-500 mt-2">Would you like to continue where you left off?</p>
+                <p class="text-sm text-green-600 mt-2">Last code: ${lastTime}</p>
             `;
             
             modal.classList.remove('hidden');
         }
 
-        // Accept recovered data
         function acceptRecovery() {
             document.getElementById('recoveryModal').classList.add('hidden');
             updateDisplay();
-            showStatus(`✅ Restored ${codes.length} codes from previous session`);
-            showAutoSaveIndicator();
+            showStatus(`✅ Restored ${codes.length} codes`);
         }
 
-        // Reject recovered data
         function rejectRecovery() {
-            if (confirm('Are you sure? This will permanently delete all saved codes.')) {
+            if (confirm('Delete all saved codes and start fresh?')) {
                 codes = [];
                 localStorage.removeItem('ringPullCodes');
                 document.getElementById('recoveryModal').classList.add('hidden');
                 updateDisplay();
-                showStatus('Started fresh - previous codes deleted');
+                showStatus('Started fresh');
             }
         }
 
-        // Auto-save with debouncing
         function autoSave() {
             clearTimeout(autoSaveTimeout);
             autoSaveTimeout = setTimeout(() => {
                 try {
                     localStorage.setItem('ringPullCodes', JSON.stringify(codes));
-                    
-                    // Also save API key and model selection
                     const apiKey = document.getElementById('apiKey').value;
                     const model = document.getElementById('modelSelect').value;
                     if (apiKey) {
                         localStorage.setItem('ringPullApiKey', apiKey);
                     }
                     localStorage.setItem('ringPullModel', model);
-                    
                     showAutoSaveIndicator();
                 } catch (e) {
                     console.error('Auto-save failed:', e);
@@ -275,7 +251,6 @@
             }, 500);
         }
 
-        // Show auto-save indicator
         function showAutoSaveIndicator() {
             const indicator = document.getElementById('autoSaveIndicator');
             indicator.style.opacity = '1';
@@ -284,18 +259,12 @@
             }, 2000);
         }
 
-        // Update display with auto-save
         function updateDisplay() {
             const list = document.getElementById('codesList');
             const noCodes = document.getElementById('noCodes');
             const codeCount = document.getElementById('codeCount');
 
-            // Update code count
-            if (codes.length > 0) {
-                codeCount.textContent = `(${codes.length} total)`;
-            } else {
-                codeCount.textContent = '';
-            }
+            codeCount.textContent = codes.length > 0 ? `(${codes.length} total)` : '';
 
             if (codes.length === 0) {
                 list.innerHTML = '';
@@ -306,23 +275,10 @@
                 list.innerHTML = reversedCodes.map((item, displayIndex) => {
                     const actualIndex = codes.length - 1 - displayIndex;
                     return `
-                    <div class="bg-black border border-green-500 p-4 rounded mb-3 flex items-center justify-between gap-4 hover:border-green-400 transition-colors shadow-md shadow-green-500/10">
+                    <div class="bg-black border border-green-500 p-4 rounded mb-3 flex items-center justify-between gap-4">
                         <div class="flex items-center gap-4">
-                            ${item.imageData ? `
-                                <img src="${item.imageData}" 
-                                     class="w-16 h-16 object-cover rounded border-2 border-green-500 cursor-pointer hover:border-green-400 transition-colors shadow-lg"
-                                     onclick="showFullImage('${item.imageData.replace(/'/g, "\\'")}')"
-                                     title="Click to view full size">
-                            ` : `
-                                <div class="w-16 h-16 bg-gray-800 border-2 border-green-600 rounded flex items-center justify-center">
-                                    <span class="text-green-600 text-xs">No Preview</span>
-                                </div>
-                            `}
                             <div>
-                                <div class="flex items-center gap-2">
-                                    <div class="text-green-400 font-mono text-xl font-bold tracking-wider" id="code-${actualIndex}">${item.code}</div>
-                                    <button onclick="editCode(${actualIndex})" class="text-green-500 hover:text-green-300 text-sm transition-colors">✏️</button>
-                                </div>
+                                <div class="text-green-400 font-mono text-xl font-bold tracking-wider">${item.code}</div>
                                 <div class="text-green-600 text-sm">${new Date(item.timestamp).toLocaleString()}</div>
                             </div>
                         </div>
@@ -331,17 +287,11 @@
                 `}).join('');
             }
             
-            // Auto-save after display update
             autoSave();
         }
 
-        // Listen for API key changes
-        document.getElementById('apiKey').addEventListener('input', autoSave);
-        document.getElementById('modelSelect').addEventListener('change', autoSave);
-
         function showStatus(msg) {
             document.getElementById('status').textContent = msg;
-            console.log(msg);
         }
 
         function showCaptureStatus(type, message) {
@@ -362,13 +312,6 @@
             }
             
             statusDiv.classList.remove('hidden');
-        }
-
-        function hideCaptureStatus() {
-            const statusDiv = document.getElementById('captureStatus');
-            setTimeout(() => {
-                statusDiv.classList.add('hidden');
-            }, 2000);
         }
 
         async function testAPI() {
@@ -393,11 +336,11 @@
                 });
 
                 if (response.ok) {
-                    status.textContent = `✅ API working with ${model}!`;
-                    autoSave(); // Save the working API key
+                    status.textContent = `✅ API working!`;
+                    autoSave();
                 } else {
                     const errorData = await response.json();
-                    status.textContent = `❌ Error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`;
+                    status.textContent = `❌ Error: ${errorData.error?.message || 'Unknown error'}`;
                 }
             } catch (err) {
                 status.textContent = `❌ ${err.message}`;
@@ -414,7 +357,7 @@
                     await startCamera();
                     container.style.display = 'block';
                     switchBtn.style.display = 'block';
-                    showCaptureStatus('ready', 'Ready to capture next photo');
+                    showCaptureStatus('ready', 'Ready to capture');
                 } catch (err) {
                     alert('Camera failed: ' + err.message);
                     toggle.checked = false;
@@ -426,14 +369,11 @@
                 }
                 container.style.display = 'none';
                 switchBtn.style.display = 'none';
-                showStatus('Camera stopped');
             }
         }
 
         async function startCamera() {
             const video = document.getElementById('cameraVideo');
-            const cameraType = document.getElementById('cameraType');
-            
             const constraints = {
                 video: {
                     facingMode: { ideal: currentFacingMode },
@@ -442,39 +382,16 @@
                 }
             };
             
-            try {
-                if (stream) {
-                    stream.getTracks().forEach(track => track.stop());
-                }
-                
-                stream = await navigator.mediaDevices.getUserMedia(constraints);
-                video.srcObject = stream;
-                
-                const cameraName = currentFacingMode === 'environment' ? 'Back Camera' : 'Front Camera';
-                cameraType.textContent = cameraName;
-                showStatus(`📷 ${cameraName} started`);
-                
-            } catch (err) {
-                currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
-                const fallbackConstraints = {
-                    video: {
-                        facingMode: currentFacingMode,
-                        width: { ideal: 1920 },
-                        height: { ideal: 1080 }
-                    }
-                };
-                
-                stream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
-                video.srcObject = stream;
-                
-                const cameraName = currentFacingMode === 'environment' ? 'Back Camera' : 'Front Camera';
-                cameraType.textContent = cameraName + ' (fallback)';
-                showStatus(`📱 ${cameraName} started (fallback)`);
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
             }
+            
+            stream = await navigator.mediaDevices.getUserMedia(constraints);
+            video.srcObject = stream;
+            document.getElementById('cameraType').textContent = currentFacingMode === 'environment' ? 'Back Camera' : 'Front Camera';
         }
 
         async function switchCamera() {
-            if (!stream) return;
             currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
             await startCamera();
         }
@@ -489,8 +406,7 @@
             const video = document.getElementById('cameraVideo');
             if (!video.srcObject) return;
 
-            showStatus('Capturing...');
-            showCaptureStatus('processing', 'Processing image...');
+            showCaptureStatus('processing', 'Processing...');
 
             try {
                 const canvas = document.createElement('canvas');
@@ -503,19 +419,15 @@
                 
                 codes.push({
                     code: code,
-                    timestamp: new Date().toISOString(),
-                    imageData: imageData
+                    timestamp: new Date().toISOString()
                 });
 
                 updateDisplay();
                 showStatus(`Extracted: ${code}`);
-                showCaptureStatus('ready', 'Ready to capture next photo');
-                hideCaptureStatus();
-
+                showCaptureStatus('ready', 'Ready to capture');
             } catch (err) {
                 showStatus(`Error: ${err.message}`);
-                showCaptureStatus('ready', 'Ready to capture next photo');
-                hideCaptureStatus();
+                showCaptureStatus('ready', 'Ready to capture');
             }
         }
 
@@ -532,33 +444,28 @@
                 try {
                     showStatus(`Processing ${file.name}...`);
                     
-                    const imageData = await readFile(file);
+                    const reader = new FileReader();
+                    const imageData = await new Promise((resolve, reject) => {
+                        reader.onload = () => resolve(reader.result);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(file);
+                    });
+                    
                     const code = await extractCode(imageData, apiKey);
                     
                     codes.push({
                         code: code,
-                        timestamp: new Date().toISOString(),
-                        imageData: imageData
+                        timestamp: new Date().toISOString()
                     });
 
                     updateDisplay();
-                    showStatus(`Extracted from ${file.name}: ${code}`);
-
+                    showStatus(`Extracted: ${code}`);
                 } catch (err) {
-                    showStatus(`Error with ${file.name}: ${err.message}`);
+                    showStatus(`Error: ${err.message}`);
                 }
             }
 
             document.getElementById('fileInput').value = '';
-        }
-
-        function readFile(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
         }
 
         async function extractCode(imageData, apiKey) {
@@ -570,7 +477,7 @@
                 body: JSON.stringify({
                     contents: [{
                         parts: [{
-                            text: 'You are an expert OCR system. Extract the 12-character alphanumeric code from this ring pull tab image. The code MUST start with the letter D followed by exactly 11 more characters (letters and numbers only). Look very carefully at each character. Common OCR mistakes to avoid: O vs 0 (zero), I vs 1, S vs 5, Z vs 2, G vs 6, B vs 8. Return ONLY the 12-character code, nothing else.'
+                            text: 'Extract the 12-character alphanumeric code from this ring pull tab image. The code starts with D followed by 11 more characters. Return ONLY the code.'
                         }, {
                             inline_data: {
                                 mime_type: 'image/png',
@@ -582,59 +489,26 @@
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(`API Error ${response.status}: ${errorData.error?.message || 'Unknown error'}`);
+                throw new Error(`API Error ${response.status}`);
             }
 
             const data = await response.json();
-            let extractedText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+            let code = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
             
-            if (!extractedText) throw new Error('No code found');
+            if (!code) throw new Error('No code found');
 
-            let cleanCode = extractedText.replace(/[^A-Z0-9]/g, '');
+            // Clean and validate code
+            code = code.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            if (!code.startsWith('D')) code = 'D' + code;
+            if (code.length > 12) code = code.substring(0, 12);
+            if (code.length < 12) code = code.padEnd(12, '0');
             
-            const ocrCorrections = {
-                'S': '5', 'O': '0', '1': 'L', 'Z': '2',
-                'G': '6', 'B': '8', 'A': '4', 'U': 'V', 'Q': '0'
-            };
-            
-            for (const [wrong, correct] of Object.entries(ocrCorrections)) {
-                cleanCode = cleanCode.replace(new RegExp(wrong, 'g'), correct);
-            }
-            
-            let finalCode = '';
-            
-            const dCodeMatch = cleanCode.match(/D[A-Z0-9]{11}/);
-            if (dCodeMatch) {
-                finalCode = dCodeMatch[0];
-            } else {
-                if (cleanCode.length >= 12) {
-                    finalCode = 'D' + cleanCode.substring(cleanCode.startsWith('D') ? 1 : 0, 11);
-                } else if (cleanCode.length > 0) {
-                    finalCode = 'D' + cleanCode.replace('D', '').padEnd(11, '0').substring(0, 11);
-                } else {
-                    throw new Error('No valid code pattern found');
-                }
-            }
-            
-            if (finalCode.length !== 12 || !finalCode.startsWith('D')) {
-                throw new Error(`Invalid code format: ${finalCode}`);
-            }
-            
-            finalCode = finalCode.replace(/[UAS]/g, '');
-            if (finalCode.length < 12) {
-                finalCode = finalCode.padEnd(12, '0');
-            }
-            
-            return finalCode.substring(0, 12);
+            return code;
         }
 
         function removeCode(index) {
-            if (confirm('Remove this code?')) {
-                codes.splice(index, 1);
-                updateDisplay();
-                showStatus('Code removed');
-            }
+            codes.splice(index, 1);
+            updateDisplay();
         }
 
         function copyAllCodes() {
@@ -644,169 +518,33 @@
             showStatus('Copied to clipboard');
         }
 
-        function emailCodes() {
-            if (codes.length === 0) return;
-            const body = codes.map(c => c.code).join('\n');
-            window.location.href = `mailto:?subject=Ring Pull Codes&body=${encodeURIComponent(body)}`;
-        }
-
-        function whatsappCodes() {
-            if (codes.length === 0) return;
-            const text = codes.map(c => c.code).join('\n');
-            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`);
-        }
-
         function downloadExcel() {
             if (codes.length === 0) return;
-            const data = codes.map(c => ({ Code: c.code, Timestamp: new Date(c.timestamp).toLocaleString() }));
+            const data = codes.map(c => ({ 
+                Code: c.code, 
+                Timestamp: new Date(c.timestamp).toLocaleString() 
+            }));
             const ws = XLSX.utils.json_to_sheet(data);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, 'Codes');
-            XLSX.writeFile(wb, `ring-pull-codes-${new Date().toISOString().split('T')[0]}.xlsx`);
-            showStatus('Excel file downloaded');
+            XLSX.writeFile(wb, 'ring-pull-codes.xlsx');
         }
 
         function clearAll() {
             if (codes.length === 0) return;
-            
-            if (confirm(`Are you sure you want to clear all ${codes.length} codes? This cannot be undone!`)) {
+            if (confirm(`Clear all ${codes.length} codes?`)) {
                 codes = [];
-                localStorage.removeItem('ringPullCodes');
                 updateDisplay();
-                showStatus('All codes cleared');
+                showStatus('Cleared');
             }
         }
 
-        function showFullImage(imageData) {
-            const modal = document.createElement('div');
-            modal.className = 'fixed inset-0 bg-black/90 flex items-center justify-center z-50';
-            modal.onclick = () => modal.remove();
-            
-            const closeBtn = document.createElement('button');
-            closeBtn.innerHTML = '❌';
-            closeBtn.className = 'absolute top-4 right-4 bg-red-600 text-white w-12 h-12 rounded-full hover:bg-red-500 font-bold text-xl z-60 transition-colors shadow-lg';
-            closeBtn.onclick = (e) => {
-                e.stopPropagation();
-                modal.remove();
-            };
-            
-            const imageContainer = document.createElement('div');
-            imageContainer.className = 'relative max-w-full max-h-full p-4';
-            imageContainer.onclick = (e) => e.stopPropagation();
-            
-            const img = document.createElement('img');
-            img.src = imageData;
-            img.className = 'max-w-full max-h-full rounded-lg border-2 border-green-400 shadow-2xl';
-            
-            const infoBar = document.createElement('div');
-            infoBar.className = 'absolute bottom-0 left-0 right-0 bg-black/80 text-green-300 p-2 rounded-b-lg text-center text-sm';
-            infoBar.innerHTML = '🔍 Full Size Preview • Click outside or X to close';
-            
-            imageContainer.appendChild(img);
-            imageContainer.appendChild(infoBar);
-            modal.appendChild(closeBtn);
-            modal.appendChild(imageContainer);
-            document.body.appendChild(modal);
-            
-            const handleKeyDown = (e) => {
-                if (e.key === 'Escape') {
-                    modal.remove();
-                    document.removeEventListener('keydown', handleKeyDown);
-                }
-            };
-            document.addEventListener('keydown', handleKeyDown);
-        }
+        // Event listeners
+        document.getElementById('apiKey').addEventListener('input', autoSave);
+        document.getElementById('modelSelect').addEventListener('change', autoSave);
 
-        function editCode(index) {
-            const currentCode = codes[index].code;
-            const codeElement = document.getElementById(`code-${index}`);
-            
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.value = currentCode;
-            input.className = 'bg-black border-2 border-green-400 text-green-400 font-mono text-xl font-bold px-2 py-1 rounded w-48 focus:border-green-300 focus:outline-none';
-            input.maxLength = 12;
-            input.style.textTransform = 'uppercase';
-            
-            const buttonContainer = document.createElement('div');
-            buttonContainer.className = 'flex gap-2 mt-2';
-            
-            const saveBtn = document.createElement('button');
-            saveBtn.textContent = '✅ Save';
-            saveBtn.className = 'bg-green-600 text-black px-3 py-1 rounded text-sm hover:bg-green-500 font-bold transition-colors';
-            
-            const cancelBtn = document.createElement('button');
-            cancelBtn.textContent = '❌ Cancel';
-            cancelBtn.className = 'bg-gray-600 text-white px-3 py-1 rounded text-sm hover:bg-gray-500 font-bold transition-colors';
-            
-            buttonContainer.appendChild(saveBtn);
-            buttonContainer.appendChild(cancelBtn);
-            
-            const originalContent = codeElement.innerHTML;
-            codeElement.innerHTML = '';
-            codeElement.appendChild(input);
-            codeElement.appendChild(buttonContainer);
-            
-            input.focus();
-            input.select();
-            
-            input.addEventListener('input', (e) => {
-                e.target.value = e.target.value.toUpperCase();
-            });
-            
-            const saveCode = () => {
-                let newCode = input.value.trim().toUpperCase();
-                
-                if (!newCode) {
-                    alert('Code cannot be empty');
-                    return;
-                }
-                
-                if (!newCode.startsWith('D')) {
-                    newCode = 'D' + newCode.replace(/^D*/, '');
-                }
-                
-                if (newCode.length < 12) {
-                    newCode = newCode.padEnd(12, '0');
-                } else if (newCode.length > 12) {
-                    newCode = newCode.substring(0, 12);
-                }
-                
-                newCode = newCode.replace(/[UAS]/g, '');
-                if (newCode.length < 12) {
-                    newCode = newCode.padEnd(12, '0');
-                }
-                
-                codes[index].code = newCode;
-                updateDisplay();
-                showStatus(`Code updated to: ${newCode}`);
-            };
-            
-            const cancelEdit = () => {
-                codeElement.innerHTML = originalContent;
-            };
-            
-            saveBtn.onclick = saveCode;
-            cancelBtn.onclick = cancelEdit;
-            
-            input.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    saveCode();
-                } else if (e.key === 'Escape') {
-                    e.preventDefault();
-                    cancelEdit();
-                }
-            });
-        }
-
-        // Prevent accidental page refresh/close
-        window.addEventListener('beforeunload', (e) => {
-            if (codes.length > 0) {
-                e.preventDefault();
-                e.returnValue = 'You have extracted codes. Are you sure you want to leave?';
-            }
-        });
-
-        // Initialize the app when page loads
+        // Initialize on load
         window.addEventListener('DOMContentLoaded', initializeApp);
+    </script>
+</body>
+</html>
