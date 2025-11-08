@@ -20,14 +20,49 @@
         .capture-ready {
             animation: pulse-ready 2s infinite;
         }
+        @keyframes slideIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        .slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
     </style>
 </head>
 <body class="bg-black min-h-screen p-4">
+    <!-- Recovery Modal - Shows on page load if data exists -->
+    <div id="recoveryModal" class="fixed inset-0 bg-black/90 flex items-center justify-center z-50 hidden">
+        <div class="bg-gray-900 border-2 border-green-500 rounded-lg p-6 max-w-md w-full mx-4 text-center slide-in">
+            <h3 class="text-2xl font-bold text-green-400 mb-4">🎉 Welcome Back!</h3>
+            <div id="recoveryMessage" class="text-green-300 mb-6"></div>
+            <div class="flex gap-4 justify-center">
+                <button onclick="acceptRecovery()" class="bg-green-600 text-black px-6 py-2 rounded hover:bg-green-500 font-bold transition-colors">
+                    ✅ Continue with Saved Data
+                </button>
+                <button onclick="rejectRecovery()" class="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-500 font-bold transition-colors">
+                    🗑️ Start Fresh
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auto-Save Indicator -->
+    <div id="autoSaveIndicator" class="fixed top-4 right-4 bg-green-600 text-black px-3 py-1 rounded-lg text-sm font-bold opacity-0 transition-opacity duration-300 z-40">
+        💾 Auto-Saved
+    </div>
+
     <div class="max-w-4xl mx-auto">
         <div class="text-center mb-8">
             <h1 class="text-5xl font-bold text-green-400 mb-2 drop-shadow-lg">🔮 Ring Pull Oracle</h1>
             <p class="text-green-300 text-lg">AI-Powered Code Extraction System</p>
             <div class="w-32 h-1 bg-gradient-to-r from-green-400 to-green-600 mx-auto mt-4 rounded"></div>
+            <p id="autoSaveStatus" class="text-green-600 text-xs mt-2">✅ Auto-Save Enabled - Your data is protected</p>
         </div>
 
         <!-- API Key -->
@@ -120,7 +155,7 @@
         <div class="bg-gray-900 border border-green-500 rounded-lg p-6 mb-6 shadow-lg shadow-green-500/20">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-green-400 font-bold flex items-center">
-                    <span class="mr-2">💾</span> Extracted Codes
+                    <span class="mr-2">💾</span> Extracted Codes <span id="codeCount" class="text-green-600 text-sm ml-2"></span>
                 </h2>
                 <div class="flex gap-2 flex-wrap">
                     <button onclick="copyAllCodes()" class="bg-green-600 text-black px-3 py-2 rounded hover:bg-green-500 font-bold transition-colors text-lg" title="Copy to Clipboard">📋</button>
@@ -151,119 +186,116 @@
         let stream = null;
         let codes = [];
         let currentFacingMode = 'environment';
-        let refreshModal = null; // For the custom modal
+        let autoSaveTimeout = null;
 
-        try {
-            const saved = localStorage.getItem('codes');
-            if (saved) codes = JSON.parse(saved);
-        } catch (e) {
-            console.log('Could not load saved codes');
+        // Initialize and check for saved data
+        function initializeApp() {
+            // Load saved codes
+            try {
+                const saved = localStorage.getItem('ringPullCodes');
+                const savedApiKey = localStorage.getItem('ringPullApiKey');
+                const savedModel = localStorage.getItem('ringPullModel');
+                
+                if (saved) {
+                    const parsedCodes = JSON.parse(saved);
+                    if (parsedCodes && parsedCodes.length > 0) {
+                        codes = parsedCodes;
+                        showRecoveryModal(codes.length);
+                    }
+                }
+                
+                // Restore API key and model if saved
+                if (savedApiKey) {
+                    document.getElementById('apiKey').value = savedApiKey;
+                }
+                if (savedModel) {
+                    document.getElementById('modelSelect').value = savedModel;
+                }
+                
+            } catch (e) {
+                console.log('Could not load saved data:', e);
+            }
         }
-        
-        updateDisplay();
 
-        // Custom refresh confirmation modal
-        function showRefreshModal() {
-            if (codes.length === 0 || refreshModal) return; // Skip if empty or already showing
-
-            refreshModal = document.createElement('div');
-            refreshModal.className = 'fixed inset-0 bg-black/80 flex items-center justify-center z-50';
-            refreshModal.innerHTML = `
-                <div class="bg-gray-900 border-2 border-red-500 rounded-lg p-6 max-w-md w-full mx-4 text-center">
-                    <h3 class="text-2xl font-bold text-red-400 mb-4">⚠️ Leaving the Page?</h3>
-                    <p class="text-green-300 mb-6">You have ${codes.length} extracted codes. They auto-save, but export (📋/📧/📊) before leaving to be safe!</p>
-                    <div class="flex gap-4 justify-center">
-                        <button id="confirmRefresh" class="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-500 font-bold transition-colors">Leave Anyway</button>
-                        <button id="cancelRefresh" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-500 font-bold transition-colors">Stay Here</button>
-                    </div>
-                </div>
+        // Show recovery modal
+        function showRecoveryModal(codeCount) {
+            const modal = document.getElementById('recoveryModal');
+            const message = document.getElementById('recoveryMessage');
+            
+            const lastCode = codes[codes.length - 1];
+            const lastTime = lastCode ? new Date(lastCode.timestamp).toLocaleString() : 'Unknown';
+            
+            message.innerHTML = `
+                <p>Found <strong>${codeCount} saved codes</strong> from your previous session!</p>
+                <p class="text-sm text-green-600 mt-2">Last code saved: ${lastTime}</p>
+                <p class="text-sm text-green-500 mt-2">Would you like to continue where you left off?</p>
             `;
-            document.body.appendChild(refreshModal);
-
-            // Event listeners for modal buttons
-            document.getElementById('confirmRefresh').onclick = () => {
-                refreshModal.remove();
-                refreshModal = null;
-                // Proceed with refresh (e.g., for F5, it will continue)
-                location.reload();
-            };
-            document.getElementById('cancelRefresh').onclick = () => {
-                refreshModal.remove();
-                refreshModal = null;
-            };
-
-            // Auto-focus cancel for safety
-            document.getElementById('cancelRefresh').focus();
+            
+            modal.classList.remove('hidden');
         }
 
-        // Block common refresh keys and show modal
-        document.addEventListener('keydown', function(event) {
-            if ((event.key === 'F5' || (event.ctrlKey && event.key === 'r') || (event.metaKey && event.key === 'r')) && codes.length > 0) {
-                event.preventDefault();
-                showRefreshModal();
-                return false;
-            }
-        });
-
-        // Catch browser back/forward navigation
-        window.addEventListener('popstate', function(event) {
-            if (codes.length > 0) {
-                event.preventDefault();
-                showRefreshModal();
-                // Push state back to stay
-                history.pushState(null, null, location.href);
-            }
-        });
-
-        // Fallback for tab visibility change (e.g., accidental close)
-        document.addEventListener('visibilitychange', function() {
-            if (document.hidden && codes.length > 0) {
-                // Optional: Could log or prompt on return, but keeping light
-            }
-        });
-
-        // Legacy beforeunload as backup (for non-key refreshes)
-        window.onbeforeunload = function(e) {
-            if (codes.length > 0) {
-                return 'You have unsaved codes—export them first!';
-            }
-        };
-
-        function showStatus(msg) {
-            document.getElementById('status').textContent = msg;
-            console.log(msg);
+        // Accept recovered data
+        function acceptRecovery() {
+            document.getElementById('recoveryModal').classList.add('hidden');
+            updateDisplay();
+            showStatus(`✅ Restored ${codes.length} codes from previous session`);
+            showAutoSaveIndicator();
         }
 
-        function showCaptureStatus(type, message) {
-            const statusDiv = document.getElementById('captureStatus');
-            const iconSpan = document.getElementById('captureStatusIcon');
-            const textSpan = document.getElementById('captureStatusText');
-            
-            statusDiv.classList.remove('hidden', 'bg-green-500', 'bg-yellow-500', 'capture-ready');
-            
-            if (type === 'ready') {
-                statusDiv.classList.add('bg-green-500', 'capture-ready');
-                iconSpan.textContent = '✅ ';
-                textSpan.textContent = message;
-            } else if (type === 'processing') {
-                statusDiv.classList.add('bg-yellow-500');
-                iconSpan.textContent = '⏳ ';
-                textSpan.textContent = message;
+        // Reject recovered data
+        function rejectRecovery() {
+            if (confirm('Are you sure? This will permanently delete all saved codes.')) {
+                codes = [];
+                localStorage.removeItem('ringPullCodes');
+                document.getElementById('recoveryModal').classList.add('hidden');
+                updateDisplay();
+                showStatus('Started fresh - previous codes deleted');
             }
-            
-            statusDiv.classList.remove('hidden');
         }
 
-        function hideCaptureStatus() {
-            const statusDiv = document.getElementById('captureStatus');
+        // Auto-save with debouncing
+        function autoSave() {
+            clearTimeout(autoSaveTimeout);
+            autoSaveTimeout = setTimeout(() => {
+                try {
+                    localStorage.setItem('ringPullCodes', JSON.stringify(codes));
+                    
+                    // Also save API key and model selection
+                    const apiKey = document.getElementById('apiKey').value;
+                    const model = document.getElementById('modelSelect').value;
+                    if (apiKey) {
+                        localStorage.setItem('ringPullApiKey', apiKey);
+                    }
+                    localStorage.setItem('ringPullModel', model);
+                    
+                    showAutoSaveIndicator();
+                } catch (e) {
+                    console.error('Auto-save failed:', e);
+                }
+            }, 500);
+        }
+
+        // Show auto-save indicator
+        function showAutoSaveIndicator() {
+            const indicator = document.getElementById('autoSaveIndicator');
+            indicator.style.opacity = '1';
             setTimeout(() => {
-                statusDiv.classList.add('hidden');
+                indicator.style.opacity = '0';
             }, 2000);
         }
 
+        // Update display with auto-save
         function updateDisplay() {
             const list = document.getElementById('codesList');
             const noCodes = document.getElementById('noCodes');
+            const codeCount = document.getElementById('codeCount');
+
+            // Update code count
+            if (codes.length > 0) {
+                codeCount.textContent = `(${codes.length} total)`;
+            } else {
+                codeCount.textContent = '';
+            }
 
             if (codes.length === 0) {
                 list.innerHTML = '';
@@ -299,11 +331,44 @@
                 `}).join('');
             }
             
-            try {
-                localStorage.setItem('codes', JSON.stringify(codes));
-            } catch (e) {
-                console.log('Could not save codes to localStorage');
+            // Auto-save after display update
+            autoSave();
+        }
+
+        // Listen for API key changes
+        document.getElementById('apiKey').addEventListener('input', autoSave);
+        document.getElementById('modelSelect').addEventListener('change', autoSave);
+
+        function showStatus(msg) {
+            document.getElementById('status').textContent = msg;
+            console.log(msg);
+        }
+
+        function showCaptureStatus(type, message) {
+            const statusDiv = document.getElementById('captureStatus');
+            const iconSpan = document.getElementById('captureStatusIcon');
+            const textSpan = document.getElementById('captureStatusText');
+            
+            statusDiv.classList.remove('hidden', 'bg-green-500', 'bg-yellow-500', 'capture-ready');
+            
+            if (type === 'ready') {
+                statusDiv.classList.add('bg-green-500', 'capture-ready');
+                iconSpan.textContent = '✅ ';
+                textSpan.textContent = message;
+            } else if (type === 'processing') {
+                statusDiv.classList.add('bg-yellow-500');
+                iconSpan.textContent = '⏳ ';
+                textSpan.textContent = message;
             }
+            
+            statusDiv.classList.remove('hidden');
+        }
+
+        function hideCaptureStatus() {
+            const statusDiv = document.getElementById('captureStatus');
+            setTimeout(() => {
+                statusDiv.classList.add('hidden');
+            }, 2000);
         }
 
         async function testAPI() {
@@ -329,6 +394,7 @@
 
                 if (response.ok) {
                     status.textContent = `✅ API working with ${model}!`;
+                    autoSave(); // Save the working API key
                 } else {
                     const errorData = await response.json();
                     status.textContent = `❌ Error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`;
@@ -488,7 +554,7 @@
 
         function readFile(file) {
             return new Promise((resolve, reject) => {
-                const reader = FileReader();
+                const reader = new FileReader();
                 reader.onload = () => resolve(reader.result);
                 reader.onerror = reject;
                 reader.readAsDataURL(file);
@@ -564,8 +630,11 @@
         }
 
         function removeCode(index) {
-            codes.splice(index, 1);
-            updateDisplay();
+            if (confirm('Remove this code?')) {
+                codes.splice(index, 1);
+                updateDisplay();
+                showStatus('Code removed');
+            }
         }
 
         function copyAllCodes() {
@@ -589,18 +658,22 @@
 
         function downloadExcel() {
             if (codes.length === 0) return;
-            const data = codes.map(c => ({ Code: c.code }));
+            const data = codes.map(c => ({ Code: c.code, Timestamp: new Date(c.timestamp).toLocaleString() }));
             const ws = XLSX.utils.json_to_sheet(data);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, 'Codes');
-            XLSX.writeFile(wb, 'ring-pull-codes.xlsx');
+            XLSX.writeFile(wb, `ring-pull-codes-${new Date().toISOString().split('T')[0]}.xlsx`);
+            showStatus('Excel file downloaded');
         }
 
         function clearAll() {
-            if (confirm('Clear all?')) {
+            if (codes.length === 0) return;
+            
+            if (confirm(`Are you sure you want to clear all ${codes.length} codes? This cannot be undone!`)) {
                 codes = [];
+                localStorage.removeItem('ringPullCodes');
                 updateDisplay();
-                showStatus('Cleared');
+                showStatus('All codes cleared');
             }
         }
 
@@ -726,6 +799,14 @@
                 }
             });
         }
-    </script>
-</body>
-</html>
+
+        // Prevent accidental page refresh/close
+        window.addEventListener('beforeunload', (e) => {
+            if (codes.length > 0) {
+                e.preventDefault();
+                e.returnValue = 'You have extracted codes. Are you sure you want to leave?';
+            }
+        });
+
+        // Initialize the app when page loads
+        window.addEventListener('DOMContentLoaded', initializeApp);
