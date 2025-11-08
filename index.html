@@ -500,6 +500,10 @@
 
             // Clean and validate code
             code = code.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            
+            // Replace S with 5 (no S letters in these codes)
+            code = code.replace(/S/g, '5');
+            
             if (!code.startsWith('D')) code = 'D' + code;
             if (code.length > 12) code = code.substring(0, 12);
             if (code.length < 12) code = code.padEnd(12, '0');
