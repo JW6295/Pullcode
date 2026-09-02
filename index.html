@@ -176,6 +176,19 @@
                             </div>
                         </div>
                     </div>
+
+                    <div id="cameraReviewOverlay" class="absolute inset-0 hidden items-center justify-center bg-black/85 rounded-lg p-4 z-20">
+                        <div class="w-full text-center">
+                            <div class="text-green-300 text-sm font-bold uppercase tracking-wider mb-2">Detected code — check before saving</div>
+                            <input id="cameraReviewCode" type="text" maxlength="12" autocomplete="off" spellcheck="false"
+                                   class="w-full bg-black border-2 border-green-400 rounded-lg p-3 text-center text-green-300 font-mono text-2xl sm:text-3xl font-bold tracking-widest uppercase focus:outline-none focus:border-yellow-400">
+                            <div id="cameraReviewHint" class="text-gray-300 text-xs mt-2">Compare this with the ring pull. Tap the code to correct it.</div>
+                            <div class="grid grid-cols-2 gap-3 mt-4">
+                                <button onclick="rescanCameraCode()" class="bg-gray-700 text-white p-3 rounded-lg font-bold hover:bg-gray-600">↻ Rescan</button>
+                                <button onclick="confirmCameraCode()" class="bg-green-500 text-black p-3 rounded-lg font-bold hover:bg-green-400">✓ Confirm</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <div id="captureStatus" class="mt-4 p-3 rounded-lg text-center font-semibold text-sm transition-all hidden">
@@ -262,6 +275,7 @@
         let codes = [];
         let currentFacingMode = 'environment';
         let autoSaveTimeout = null;
+        let pendingCameraCode = '';
         const DEFAULT_SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbw6adSD1aO71GsOAFhNyZgWbc_v0klPqmUiGF1CVeFYJs8UtxCuPo8rHEtmlcsx-23X/exec';
         const CONFIRMED_SYNC_VERSION = '1';
 
@@ -578,6 +592,7 @@
                 }
                 container.style.display = 'none';
                 switchBtn.style.display = 'none';
+                hideCameraReview();
             }
         }
 
@@ -614,6 +629,7 @@
 
             const video = document.getElementById('cameraVideo');
             if (!video.srcObject) return;
+            if (!document.getElementById('cameraReviewOverlay').classList.contains('hidden')) return;
 
             showCaptureStatus('processing', 'Processing...');
 
@@ -626,12 +642,51 @@
 
                 const code = await extractCode(imageData, apiKey);
                 
-                if (addCode(code, 'camera')) showStatus(`Extracted: ${code}`);
-                showCaptureStatus('ready', 'Ready to capture');
+                showCameraReview(code);
+                showStatus(`Check detected code: ${code}`);
+                showCaptureStatus('ready', 'Waiting for confirmation');
             } catch (err) {
                 showStatus(`Error: ${err.message}`);
                 showCaptureStatus('ready', 'Ready to capture');
             }
+        }
+
+        function showCameraReview(code) {
+            pendingCameraCode = normalizeCode(code);
+            const overlay = document.getElementById('cameraReviewOverlay');
+            const input = document.getElementById('cameraReviewCode');
+            input.value = pendingCameraCode;
+            document.getElementById('cameraReviewHint').textContent = 'Compare this with the ring pull. Tap the code to correct it.';
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+        }
+
+        function hideCameraReview() {
+            const overlay = document.getElementById('cameraReviewOverlay');
+            overlay.classList.add('hidden');
+            overlay.classList.remove('flex');
+            pendingCameraCode = '';
+        }
+
+        function confirmCameraCode() {
+            const code = normalizeCode(document.getElementById('cameraReviewCode').value);
+            if (!/^C[A-Z0-9]{11}$/.test(code)) {
+                document.getElementById('cameraReviewHint').textContent = '⚠ Code must start with C and contain exactly 12 characters.';
+                document.getElementById('cameraReviewCode').focus();
+                return;
+            }
+
+            const added = addCode(code, 'camera');
+            hideCameraReview();
+            showCaptureStatus('ready', 'Ready for next code');
+            showStatus(added ? `Confirmed and saved: ${code}` : `Duplicate ignored: ${code}`);
+        }
+
+        function rescanCameraCode() {
+            hideCameraReview();
+            document.getElementById('cameraReviewHint').textContent = 'Compare this with the ring pull. Tap the code to correct it.';
+            showCaptureStatus('ready', 'Ready to capture again');
+            showStatus('Scan discarded — ready to try again.');
         }
 
         async function processFiles() {
@@ -873,6 +928,9 @@
         document.getElementById('sheetEndpoint').addEventListener('change', saveCloudSettings);
         document.getElementById('manualCode').addEventListener('keydown', event => {
             if (event.key === 'Enter') addManualCode();
+        });
+        document.getElementById('cameraReviewCode').addEventListener('keydown', event => {
+            if (event.key === 'Enter') confirmCameraCode();
         });
 
         // Initialize on load
