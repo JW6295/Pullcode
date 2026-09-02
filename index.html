@@ -177,15 +177,15 @@
                         </div>
                     </div>
 
-                    <div id="cameraReviewOverlay" class="absolute inset-0 hidden items-center justify-center bg-black/85 rounded-lg p-4 z-20">
-                        <div class="w-full text-center">
-                            <div class="text-green-300 text-sm font-bold uppercase tracking-wider mb-2">Detected code — check before saving</div>
+                    <div id="cameraReviewOverlay" class="absolute top-2 left-2 right-2 hidden z-20">
+                        <div class="w-full text-center bg-black/95 border-2 border-green-400 rounded-xl p-3 shadow-xl shadow-black/60">
+                            <div class="text-green-300 text-xs font-bold uppercase tracking-wider mb-1">Detected code — check before saving</div>
                             <input id="cameraReviewCode" type="text" maxlength="12" autocomplete="off" spellcheck="false"
-                                   class="w-full bg-black border-2 border-green-400 rounded-lg p-3 text-center text-green-300 font-mono text-2xl sm:text-3xl font-bold tracking-widest uppercase focus:outline-none focus:border-yellow-400">
-                            <div id="cameraReviewHint" class="text-gray-300 text-xs mt-2">Compare this with the ring pull. Tap the code to correct it.</div>
-                            <div class="grid grid-cols-2 gap-3 mt-4">
-                                <button onclick="rescanCameraCode()" class="bg-gray-700 text-white p-3 rounded-lg font-bold hover:bg-gray-600">↻ Rescan</button>
-                                <button onclick="confirmCameraCode()" class="bg-green-500 text-black p-3 rounded-lg font-bold hover:bg-green-400">✓ Confirm</button>
+                                   class="w-full bg-black border border-green-400 rounded-lg p-2 text-center text-green-300 font-mono text-xl sm:text-2xl font-bold tracking-widest uppercase focus:outline-none focus:border-yellow-400">
+                            <div id="cameraReviewHint" class="text-gray-300 text-[11px] mt-1">Compare with the live camera view below. Tap the code to correct it.</div>
+                            <div class="grid grid-cols-2 gap-2 mt-2">
+                                <button onclick="rescanCameraCode()" class="bg-gray-700 text-white py-2 px-3 rounded-lg text-sm font-bold hover:bg-gray-600">↻ Rescan</button>
+                                <button onclick="confirmCameraCode()" class="bg-green-500 text-black py-2 px-3 rounded-lg text-sm font-bold hover:bg-green-400">✓ Confirm</button>
                             </div>
                         </div>
                     </div>
@@ -656,7 +656,7 @@
             const overlay = document.getElementById('cameraReviewOverlay');
             const input = document.getElementById('cameraReviewCode');
             input.value = pendingCameraCode;
-            document.getElementById('cameraReviewHint').textContent = 'Compare this with the ring pull. Tap the code to correct it.';
+            document.getElementById('cameraReviewHint').textContent = 'Compare with the live camera view below. Tap the code to correct it.';
             overlay.classList.remove('hidden');
             overlay.classList.add('flex');
         }
@@ -684,7 +684,7 @@
 
         function rescanCameraCode() {
             hideCameraReview();
-            document.getElementById('cameraReviewHint').textContent = 'Compare this with the ring pull. Tap the code to correct it.';
+            document.getElementById('cameraReviewHint').textContent = 'Compare with the live camera view below. Tap the code to correct it.';
             showCaptureStatus('ready', 'Ready to capture again');
             showStatus('Scan discarded — ready to try again.');
         }
