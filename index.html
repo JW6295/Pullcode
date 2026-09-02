@@ -141,6 +141,7 @@
                    class="w-full p-3 rounded bg-black border border-green-500 text-green-300 placeholder-green-700 focus:outline-none mb-3">
             <div class="flex flex-wrap gap-2">
                 <button onclick="saveCloudSettings()" class="bg-green-600 text-black px-4 py-2 rounded hover:bg-green-500 font-bold">Save settings</button>
+                <button onclick="testCloudConnection()" class="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-600 font-bold">Test connection</button>
                 <button onclick="syncPendingCodes()" class="bg-green-800 text-green-100 px-4 py-2 rounded hover:bg-green-700 font-bold">Retry unsynced</button>
                 <button onclick="openSetupHelp()" class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600 font-bold">Setup help</button>
             </div>
@@ -262,6 +263,7 @@
         let currentFacingMode = 'environment';
         let autoSaveTimeout = null;
         const DEFAULT_SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbw6adSD1aO71GsOAFhNyZgWbc_v0klPqmUiGF1CVeFYJs8UtxCuPo8rHEtmlcsx-23X/exec';
+        const CONFIRMED_SYNC_VERSION = '1';
 
         function showTab(tabName) {
             document.querySelectorAll('[data-tab-section]').forEach(section => {
@@ -289,6 +291,7 @@
                 const savedEndpoint = localStorage.getItem('ringPullSheetEndpoint');
                 const savedCloudSetting = localStorage.getItem('ringPullCloudEnabled');
                 const cloudEnabled = savedCloudSetting === null ? true : savedCloudSetting === 'true';
+                const resetUnconfirmedSync = localStorage.getItem('ringPullConfirmedSyncVersion') !== CONFIRMED_SYNC_VERSION;
                 
                 if (saved) {
                     const parsedCodes = JSON.parse(saved);
@@ -299,7 +302,7 @@
                             batch: item.batch || '',
                             source: item.source || 'legacy',
                             needsReview: typeof item.needsReview === 'boolean' ? item.needsReview : (item.code?.length !== 12 || !item.code?.startsWith('C')),
-                            syncStatus: item.syncStatus || 'pending'
+                            syncStatus: resetUnconfirmedSync ? 'pending' : (item.syncStatus || 'pending')
                         }));
                         showRecoveryModal(codes.length);
                     }
@@ -319,6 +322,7 @@
                 document.getElementById('batchName').value = savedBatch || '';
                 document.getElementById('sheetEndpoint').value = savedEndpoint || DEFAULT_SHEET_ENDPOINT;
                 document.getElementById('cloudEnabled').checked = cloudEnabled;
+                localStorage.setItem('ringPullConfirmedSyncVersion', CONFIRMED_SYNC_VERSION);
                 updateCloudStatus();
                 showTab(localStorage.getItem('ringPullActiveTab') || 'scan');
                 
@@ -770,30 +774,65 @@
             document.getElementById('cloudStatus').textContent = message || (configured ? 'New codes will sync automatically.' : 'Cloud sync is not configured.');
         }
 
+        function jsonpRequest(params, timeoutMs = 15000) {
+            return new Promise((resolve, reject) => {
+                const callbackName = `ringPullCallback_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+                const script = document.createElement('script');
+                const timeout = setTimeout(() => finish(new Error('Google did not confirm the request. Check that the latest Apps Script version is deployed.')), timeoutMs);
+
+                function cleanup() {
+                    clearTimeout(timeout);
+                    delete window[callbackName];
+                    script.remove();
+                }
+
+                function finish(error, result) {
+                    cleanup();
+                    error ? reject(error) : resolve(result);
+                }
+
+                window[callbackName] = result => finish(null, result);
+                script.onerror = () => finish(new Error('Could not reach the Google Sheets web app.'));
+
+                const url = new URL(document.getElementById('sheetEndpoint').value.trim());
+                Object.entries({...params, callback: callbackName}).forEach(([key, value]) => url.searchParams.set(key, value ?? ''));
+                script.src = url.toString();
+                document.head.appendChild(script);
+            });
+        }
+
+        async function testCloudConnection() {
+            if (!isCloudConfigured()) return updateCloudStatus('Enable cloud sync and add the web app URL first.');
+            updateCloudStatus('Testing Google Sheets connection…');
+            try {
+                const result = await jsonpRequest({action: 'ping'});
+                if (!result?.ok) throw new Error(result?.error || 'Google returned an invalid response.');
+                updateCloudStatus('✅ Connection confirmed. Google Sheets is ready.');
+            } catch (error) {
+                updateCloudStatus(`❌ ${error.message}`);
+            }
+        }
+
         async function syncCode(item) {
             if (!isCloudConfigured() || item.needsReview || item.syncStatus === 'synced') return;
             item.syncStatus = 'syncing';
             updateDisplay();
-            const endpoint = document.getElementById('sheetEndpoint').value.trim();
             try {
-                await fetch(endpoint, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: {'Content-Type': 'text/plain;charset=utf-8'},
-                    body: JSON.stringify({
-                        id: item.id,
-                        code: item.code,
-                        timestamp: item.timestamp,
-                        batch: item.batch || '',
-                        source: item.source || ''
-                    })
+                const result = await jsonpRequest({
+                    action: 'add',
+                    id: item.id,
+                    code: item.code,
+                    timestamp: item.timestamp,
+                    batch: item.batch || '',
+                    source: item.source || ''
                 });
+                if (!result?.ok) throw new Error(result?.error || 'Google rejected the code.');
                 item.syncStatus = 'synced';
                 item.syncedAt = new Date().toISOString();
-                updateCloudStatus(`Last sent: ${item.code}`);
+                updateCloudStatus(result.duplicate ? `Confirmed: ${item.code} was already in the sheet.` : `✅ Added to Google Sheets: ${item.code}`);
             } catch (error) {
                 item.syncStatus = 'pending';
-                updateCloudStatus(`Sync failed. Code is safe locally; use Retry unsynced.`);
+                updateCloudStatus(`❌ Sync failed: ${error.message} Code remains safe locally.`);
             }
             updateDisplay();
         }
