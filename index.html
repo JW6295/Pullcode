@@ -98,7 +98,7 @@
                 <div>
                     <label for="manualCode" class="text-green-300 text-sm mb-1 block">Add a code manually</label>
                     <div class="flex gap-2">
-                        <input id="manualCode" type="text" maxlength="12" placeholder="DXXXXXXXXXXX"
+                        <input id="manualCode" type="text" maxlength="12" placeholder="CXXXXXXXXXXX"
                                class="min-w-0 flex-1 p-3 rounded bg-black border border-green-500 text-green-300 uppercase font-mono placeholder-green-700 focus:outline-none">
                         <button onclick="addManualCode()" class="bg-green-600 text-black px-4 rounded hover:bg-green-500 font-bold">Add</button>
                     </div>
@@ -298,7 +298,7 @@
                             id: item.id || `legacy-${item.timestamp || index}-${index}`,
                             batch: item.batch || '',
                             source: item.source || 'legacy',
-                            needsReview: typeof item.needsReview === 'boolean' ? item.needsReview : (item.code?.length !== 12 || !item.code?.startsWith('D')),
+                            needsReview: typeof item.needsReview === 'boolean' ? item.needsReview : (item.code?.length !== 12 || !item.code?.startsWith('C')),
                             syncStatus: item.syncStatus || 'pending'
                         }));
                         showRecoveryModal(codes.length);
@@ -460,7 +460,7 @@
                 timestamp: new Date().toISOString(),
                 batch: document.getElementById('batchName').value.trim(),
                 source,
-                needsReview: code.length !== 12 || !code.startsWith('D'),
+                needsReview: code.length !== 12 || !code.startsWith('C'),
                 syncStatus: 'pending'
             };
             codes.push(item);
@@ -484,7 +484,7 @@
                 return updateDisplay();
             }
             codes[index].code = code;
-            codes[index].needsReview = code.length !== 12 || !code.startsWith('D');
+            codes[index].needsReview = code.length !== 12 || !code.startsWith('C');
             codes[index].syncStatus = 'pending';
             updateDisplay();
             showStatus('Code updated locally. Sync it again when ready.');
@@ -670,7 +670,7 @@
                 body: JSON.stringify({
                     contents: [{
                         parts: [{
-                            text: 'Extract the 12-character alphanumeric code from this ring pull tab image. The code starts with D followed by 11 more characters. IMPORTANT: These codes NEVER contain the letter S - any S-looking character is actually the number 5. Common OCR errors to avoid: S is always 5, O is 0 (zero), I is 1. Return ONLY the 12-character code.'
+                            text: 'Extract the 12-character alphanumeric code from this ring pull tab image. The code starts with C followed by 11 more characters. IMPORTANT: The first character must be C. These codes NEVER contain the letter S - any S-looking character is actually the number 5. Common OCR errors to avoid: S is always 5, O is 0 (zero), I is 1. Return ONLY the 12-character code.'
                         }, {
                             inline_data: {
                                 mime_type: 'image/png',
