@@ -1,0 +1,18 @@
+{
+  "name": "PullCode — Ring Pull Scanner",
+  "short_name": "PullCode",
+  "description": "Scan and manage promotional ring-pull codes",
+  "start_url": "./?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#050505",
+  "theme_color": "#16a34a",
+  "icons": [
+    {
+      "src": "./pullcode-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
